@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn import datasets
+import math
 
 def softmargin(data0, data1, supportvec):
     # count missaligned samples
@@ -16,8 +18,33 @@ def softmargin(data0, data1, supportvec):
     return data0_miss + data1_miss - margin
 
 if __name__ == '__main__':
-    data0 = np.array([1, 2, 3, 11])
-    data1 = np.array([10, 14, 18])
-    supportvec = [2, 0]
-    score = softmargin(data0, data1, supportvec)
-    print('score: ' + str(score))
+    # load iris data
+    iris = datasets.load_iris()
+    # only use information about petal width
+    data = iris.data[:, 3]
+    # assign data to training data or test data randomly
+    idx_use = np.random.permutation(iris.target.size)
+    # leave out 30% of data for testing
+    training_data = data[idx_use[:100]]
+    test_data = data[idx_use[100:]]
+    # get labels
+    training_labels = iris.target[idx_use[:100]]
+    test_labels = iris.target[idx_use[100:]]
+    # treat labels from all other classes as one class
+    training_labels[training_labels > 0] = 1
+    test_labels[test_labels > 0] = 1
+    # split data in two data sets
+    data0 = training_data[training_labels == 0]
+    data1 = training_data[training_labels == 1]
+    # build matrix for saving the scores
+    scores = np.zeros([len(data0), len(data1)])
+    # calculate score for every combination of support vectors
+    for i in range(len(data0)):
+        for j in range(len(data1)):
+            scores[i, j] = softmargin(data0, data1, [i, j])
+    # find minimal (best) score and corresponding support vectors
+    min_score = np.min(scores)
+    support_vectors = np.argwhere(scores == np.min(scores))[0]
+    # print results
+    print('Support Vectors:', support_vectors)
+    print('Corresponding Score:', min_score)
